@@ -195,12 +195,42 @@ pub fn main<T: Iterator<Item = String>>(mut args: T) -> Result<(), String> {
                 "No app specified. Use the --help flag to see command-line usage.".to_string(),
             );
         }
-        echo!(
-            "No app specified, opening app picker. Use the --help flag to see command-line usage."
-        );
-        let (bundle_path, mut extra_options) = environment::app_picker::app_picker(options)?;
-        option_args.append(&mut extra_options);
-        bundle_path
+
+        // Auto-launch: if the apps directory contains exactly one .app/.ipa,
+        // skip the picker and treat it exactly as if its path had been
+        // passed on the command line. If there are zero or multiple
+        // candidates, fall back to the normal interactive picker below.
+        let apps_dir = paths::user_data_base_path().join(paths::APPS_DIR);
+        let auto_launch_candidate = std::fs::read_dir(&apps_dir).ok().and_then(|entries| {
+            let mut candidates: Vec<PathBuf> = entries
+                .filter_map(|entry| entry.ok())
+                .map(|entry| entry.path())
+                .filter(|path| {
+                    let ext = path.extension().and_then(|ext| ext.to_str());
+                    ext == Some("app") || ext == Some("ipa")
+                })
+                .collect();
+            if candidates.len() == 1 {
+                candidates.pop()
+            } else {
+                None
+            }
+        });
+
+        if let Some(bundle_path) = auto_launch_candidate {
+            echo!(
+                "Exactly one app found in {}, launching it automatically.",
+                apps_dir.display()
+            );
+            bundle_path
+        } else {
+            echo!(
+                "No app specified, opening app picker. Use the --help flag to see command-line usage."
+            );
+            let (bundle_path, mut extra_options) = environment::app_picker::app_picker(options)?;
+            option_args.append(&mut extra_options);
+            bundle_path
+        }
     };
 
     // When PowerShell does tab-completion on a directory, for some reason it

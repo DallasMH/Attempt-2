@@ -1,0 +1,25 @@
+/target
+/vendor/boost
+/touchHLE_sandbox
+/touchHLE_apps
+touchHLE_log.txt
+touchHLE_wallpaper.*
+
+# Android
+
+*.iml
+.gradle
+/local.properties
+.idea/
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+android/app/src/main/jniLibs
+android/app/build
+android/build
+
+# Default developer dump file
+
+DUMP.txt
